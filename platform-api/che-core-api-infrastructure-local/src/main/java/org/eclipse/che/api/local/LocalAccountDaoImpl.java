@@ -12,12 +12,14 @@ package org.eclipse.che.api.local;
 
 import org.eclipse.che.api.account.server.dao.Account;
 import org.eclipse.che.api.account.server.dao.AccountDao;
+import org.eclipse.che.api.account.server.dao.AccountSearchCriteria;
 import org.eclipse.che.api.account.server.dao.Member;
 import org.eclipse.che.api.account.server.dao.Subscription;
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.workspace.server.dao.WorkspaceDao;
+import org.eclipse.che.commons.lang.Strings;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -32,6 +34,10 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.eclipse.che.api.account.shared.dto.SubscriptionState.ACTIVE;
+import static org.eclipse.che.commons.lang.Strings.isNullOrEmpty;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.FluentIterable;
 
 /**
  * @author Eugene Voevodin
@@ -142,6 +148,32 @@ public class LocalAccountDaoImpl implements AccountDao {
             lock.readLock().unlock();
         }
         return result;
+    }
+
+    @Override
+    public List<Account> getByCriteria(final AccountSearchCriteria searchCriteria) throws ServerException {
+        lock.readLock().lock();
+        try {
+            return FluentIterable.from(accounts)
+                                 .filter(new Predicate<Account>() {
+                                     @Override
+                                     public boolean apply(Account input) {
+                                         return isNullOrEmpty(searchCriteria.getSubscriptionPlanId()) ||
+                                                FluentIterable.from(getActiveSubscriptions(input.getId())).anyMatch(
+                                                        new Predicate<Subscription>() {
+                                                            @Override
+                                                            public boolean apply(Subscription input) {
+                                                                return input.getPlanId().equals(searchCriteria.getSubscriptionPlanId());
+                                                            }
+                                                        });
+                                     }
+                                 })
+                                 .limit(searchCriteria.getMaxItems())
+                                 .skip(searchCriteria.getSkipCount())
+                                 .toImmutableList();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override

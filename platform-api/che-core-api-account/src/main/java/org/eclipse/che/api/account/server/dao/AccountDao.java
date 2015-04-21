@@ -71,6 +71,15 @@ public interface AccountDao {
     List<Account> getByOwner(String owner) throws ServerException, NotFoundException;
 
     /**
+     * Gets accounts from persistent level by  given search criteria.
+     *
+     * @param searchCriteria
+     *         filter of accounts
+     * @return account POJO, or empty list if nothing is found
+     */
+    List<Account> getByCriteria(AccountSearchCriteria searchCriteria) throws ServerException;
+
+    /**
      * Updates already present in persistent level account
      *
      * @param account
@@ -174,4 +183,6 @@ public interface AccountDao {
      * @return list of accounts, or empty list if no accounts found
      */
     List<Member> getByMember(String userId) throws NotFoundException, ServerException;
+
+
 }

@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.eclipse.che.api.account.server;
 
+import com.google.common.base.Function;
+import com.google.common.collect.FluentIterable;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
@@ -18,6 +20,7 @@ import com.wordnik.swagger.annotations.ApiResponses;
 
 import org.eclipse.che.api.account.server.dao.Account;
 import org.eclipse.che.api.account.server.dao.AccountDao;
+import org.eclipse.che.api.account.server.dao.AccountSearchCriteria;
 import org.eclipse.che.api.account.server.dao.Member;
 import org.eclipse.che.api.account.server.dao.PlanDao;
 import org.eclipse.che.api.account.server.dao.Subscription;
@@ -53,10 +56,12 @@ import org.eclipse.che.dto.server.DtoFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.POST;
@@ -240,7 +245,8 @@ public class AccountService extends Service {
      * @see MemberDescriptor
      */
     @ApiOperation(value = "Get memberships of a specific user",
-            notes = "ID of a user should be specified as a query parameter. JSON with membership details is returned. For this API call system/admin or system/manager role is required",
+            notes = "ID of a user should be specified as a query parameter. JSON with membership details is returned. For this API call " +
+                    "system/admin or system/manager role is required",
             response = MemberDescriptor.class,
             responseContainer = "List",
             position = 3)
@@ -284,7 +290,8 @@ public class AccountService extends Service {
      *         when some error occurred while getting/updating account
      */
     @ApiOperation(value = "Delete account attribute",
-            notes = "Remove attribute from an account. Attribute name is used as a quary parameter. For this API request account/owner, system/admin or system/manager role is required",
+            notes = "Remove attribute from an account. Attribute name is used as a quary parameter. For this API request account/owner, " +
+                    "system/admin or system/manager role is required",
             position = 4)
     @ApiResponses(value = {
             @ApiResponse(code = 204, message = "OK"),
@@ -318,7 +325,8 @@ public class AccountService extends Service {
      * @see #getByName(String, SecurityContext)
      */
     @ApiOperation(value = "Get account by ID",
-            notes = "Get account information by its ID. JSON with account details is returned. This API call requires account/owner, system/admin or system/manager role.",
+            notes = "Get account information by its ID. JSON with account details is returned. This API call requires account/owner, " +
+                    "system/admin or system/manager role.",
             response = AccountDescriptor.class,
             position = 5)
     @ApiResponses(value = {
@@ -352,7 +360,8 @@ public class AccountService extends Service {
      * @see #getById(String, SecurityContext)
      */
     @ApiOperation(value = "Get account by name",
-            notes = "Get account information by its name. JSON with account details is returned. This API call requires system/admin or system/manager role.",
+            notes = "Get account information by its name. JSON with account details is returned. This API call requires system/admin or " +
+                    "system/manager role.",
             response = AccountDescriptor.class,
             position = 5)
     @ApiResponses(value = {
@@ -376,6 +385,57 @@ public class AccountService extends Service {
     }
 
     /**
+     * Searches for accounts with given search criteria and returns List of {@link AccountDescriptor} for it.
+     *
+     * @param subscriptionPlanId
+     *         id of subscription plan associated with account.
+     * @return descriptors of found accounts
+     * @throws ServerException
+     *         when some error occurred while retrieving account
+     * @see AccountDescriptor
+     * @see #getById(String, SecurityContext)
+     */
+    @ApiOperation(value = "Get account by name",
+            notes = "Get account information by its name. JSON with account details is returned. This API call requires system/admin or " +
+                    "system/manager role.",
+            response = AccountDescriptor.class,
+            position = 5)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 500, message = "Internal Server Error")})
+    @GET
+    @Path("/list")
+    @RolesAllowed({"system/admin", "system/manager"})
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<AccountDescriptor> getAccountList(@ApiParam(value = "Id of subscription plan", required = false)
+                                                  @QueryParam("subscriptionPlan") String subscriptionPlanId,
+                                                  @ApiParam(value = "Max items count", required = false)
+                                                  @DefaultValue("20")
+                                                  @QueryParam("maxItems") int maxItems,
+                                                  @ApiParam(value = "Skip count", required = false)
+                                                  @QueryParam("skipCount") int skipCount,
+                                                  final @Context SecurityContext securityContext) throws ServerException,
+                                                                                                         ConflictException {
+        if (maxItems < 1 || maxItems > 100) {
+            throw new ConflictException("Max items have to be more then 0 and less then or equal 100");
+        }
+        if (skipCount < 0) {
+            throw new ConflictException("Skip count should be positive integer");
+        }
+
+
+        return FluentIterable.from(accountDao.getByCriteria(new AccountSearchCriteria(subscriptionPlanId, maxItems, skipCount)))
+                             .transform(
+                                     new Function<Account, AccountDescriptor>() {
+                                         @Nullable
+                                         @Override
+                                         public AccountDescriptor apply(Account input) {
+                                             return toDescriptor(input, securityContext);
+                                         }
+                                     }).toList();
+    }
+
+    /**
      * Creates new account member with role <i>"account/member"</i>.
      *
      * @param accountId
@@ -394,7 +454,8 @@ public class AccountService extends Service {
      * @see #getMembers(String, SecurityContext)
      */
     @ApiOperation(value = "Add a new member to account",
-            notes = "Add a new user to an account. This user will have account/member role. This API call requires account/owner, system/admin or system/manager role.",
+            notes = "Add a new user to an account. This user will have account/member role. This API call requires account/owner, " +
+                    "system/admin or system/manager role.",
             response = MemberDescriptor.class,
             position = 6)
     @ApiResponses(value = {
@@ -595,7 +656,8 @@ public class AccountService extends Service {
      * @see SubscriptionDescriptor
      */
     @ApiOperation(value = "Get account subscriptions",
-            notes = "Get information on account subscriptions. This API call requires account/owner, account/member, system/admin or system/manager role.",
+            notes = "Get information on account subscriptions. This API call requires account/owner, account/member, system/admin or " +
+                    "system/manager role.",
             response = SubscriptionDescriptor.class,
             responseContainer = "List",
             position = 10)
@@ -911,7 +973,8 @@ public class AccountService extends Service {
      *         account id
      */
     @ApiOperation(value = "Get used resources, provided by subscriptions",
-            notes = "Returns used resources, provided by subscriptions. Roles: account/owner, account/member, system/manager, system/admin.",
+            notes = "Returns used resources, provided by subscriptions. Roles: account/owner, account/member, system/manager, " +
+                    "system/admin.",
             position = 17)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "OK"),
