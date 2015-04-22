@@ -24,24 +24,12 @@ package org.eclipse.che.api.account.server.dao;
  */
 public class AccountSearchCriteria {
     private final String subscriptionPlanId;
-    private final int    maxItems;
-    private final int    skipCount;
 
-    public AccountSearchCriteria(String subscriptionPlanId, int maxItems, int skipCount) {
+    public AccountSearchCriteria(String subscriptionPlanId) {
         this.subscriptionPlanId = subscriptionPlanId;
-        this.maxItems = maxItems;
-        this.skipCount = skipCount;
     }
 
     public String getSubscriptionPlanId() {
         return subscriptionPlanId;
-    }
-
-    public int getMaxItems() {
-        return maxItems;
-    }
-
-    public int getSkipCount() {
-        return skipCount;
     }
 }

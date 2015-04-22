@@ -151,7 +151,7 @@ public class LocalAccountDaoImpl implements AccountDao {
     }
 
     @Override
-    public List<Account> getByCriteria(final AccountSearchCriteria searchCriteria) throws ServerException {
+    public List<Account> getByCriteria(final AccountSearchCriteria searchCriteria, int maxItems, int skipCount) throws ServerException {
         lock.readLock().lock();
         try {
             return FluentIterable.from(accounts)
@@ -168,8 +168,8 @@ public class LocalAccountDaoImpl implements AccountDao {
                                                         });
                                      }
                                  })
-                                 .limit(searchCriteria.getMaxItems())
-                                 .skip(searchCriteria.getSkipCount())
+                                 .limit(maxItems)
+                                 .skip(skipCount)
                                  .toImmutableList();
         } finally {
             lock.readLock().unlock();

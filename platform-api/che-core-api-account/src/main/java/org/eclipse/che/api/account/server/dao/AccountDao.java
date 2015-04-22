@@ -75,9 +75,14 @@ public interface AccountDao {
      *
      * @param searchCriteria
      *         filter of accounts
+     * @param maxItems
+     *         - maximum number to return
+     * @param skipCount
+     *         - how many items have to be skipped.
+     *
      * @return account POJO, or empty list if nothing is found
      */
-    List<Account> getByCriteria(AccountSearchCriteria searchCriteria) throws ServerException;
+    List<Account> getByCriteria(AccountSearchCriteria searchCriteria, int maxItems, int skipCount) throws ServerException;
 
     /**
      * Updates already present in persistent level account
