@@ -27,7 +27,7 @@ import com.google.gwt.core.client.GWT;
  * their approach. A relevant thread is:
  * http://groups.google.com/group/Google-Web-Toolkit-Contributors/browse_thread/thread/6745dee7a85eb585/bd58d1a9f2344b34
  */
-public abstract class UserAgentStaticProperties {
+public class UserAgentStaticProperties {
 
     static UserAgentStaticProperties get() {
         return INSTANCE;

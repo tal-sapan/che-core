@@ -20,11 +20,13 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.Window;
 
 /** Utility methods relating to the browser. */
-public abstract class BrowserUtils {
+public class BrowserUtils {
 
     private static final BrowserUtils INSTANCE = GWT.create(BrowserUtils.class);
 
-    abstract boolean isFFox();
+    boolean isFFox() {
+        return false;
+    }
 
     static class Chrome extends BrowserUtils {
         Chrome() {
