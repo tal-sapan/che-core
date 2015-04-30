@@ -11,6 +11,8 @@
 package org.eclipse.che.ide.util;
 
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,5 +52,20 @@ public class CollectionUtils {
             }
         }
         return null;
+    }
+
+
+    public static String join(List<String> list, String separator) {
+        StringBuilder b = new StringBuilder();
+        Iterator<String> iterator = list.iterator();
+        if (iterator.hasNext()) {
+            b.append(iterator.next().toString());
+            while (iterator.hasNext()) {
+                String t = iterator.next();
+                b.append(separator);
+                b.append(t.toString());
+            }
+        }
+        return b.toString();
     }
 }

@@ -10,13 +10,14 @@
  *******************************************************************************/
 package org.eclipse.che.ide.api.editor;
 
-import org.eclipse.che.ide.api.project.tree.VirtualFile;
-import org.eclipse.che.ide.collections.Array;
-import org.eclipse.che.ide.collections.StringMap;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+
+import org.eclipse.che.ide.api.project.tree.VirtualFile;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Editor Agent manages Editors, it allows to open a new editor with given file,
@@ -28,20 +29,25 @@ public interface EditorAgent {
     /**
      * Open editor with given file
      *
-     * @param file the file to open
+     * @param file
+     *         the file to open
      */
     void openEditor(@Nonnull final VirtualFile file);
 
     /**
      * Open editor with given file, call callback when editor fully loaded and initialized.
-     * @param file the file to open
+     *
+     * @param file
+     *         the file to open
      * @param callback
      */
     void openEditor(@Nonnull VirtualFile file, @Nonnull OpenEditorCallback callback);
 
     /**
      * Sets editor as active(switch tabs and pace cursor)
-     * @param editor the editor that must be active
+     *
+     * @param editor
+     *         the editor that must be active
      */
     void activateEditor(@Nonnull EditorPartPresenter editor);
 
@@ -50,7 +56,7 @@ public interface EditorAgent {
      *
      * @return Array<EditorPartPresenter>
      */
-    Array<EditorPartPresenter> getDirtyEditors();
+    List<EditorPartPresenter> getDirtyEditors();
 
     /**
      * Get all opened editors
@@ -58,7 +64,7 @@ public interface EditorAgent {
      * @return map with all opened editors
      */
     @Nonnull
-    StringMap<EditorPartPresenter> getOpenedEditors();
+    Map<String, EditorPartPresenter> getOpenedEditors();
 
     /**
      * Saves all opened files whose content have changed since the last save operation
@@ -75,7 +81,7 @@ public interface EditorAgent {
     @Nullable
     EditorPartPresenter getActiveEditor();
 
-    interface OpenEditorCallback{
+    interface OpenEditorCallback {
         void onEditorOpened(EditorPartPresenter editor);
     }
 }

@@ -14,9 +14,11 @@
 
 package org.eclipse.che.ide.util;
 
-import org.eclipse.che.ide.collections.Array;
-import org.eclipse.che.ide.collections.Collections;
 import org.eclipse.che.ide.runtime.Assert;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Trie-based implementation of the prefix index.
@@ -26,8 +28,7 @@ import org.eclipse.che.ide.runtime.Assert;
  */
 public class AbstractTrie<T> implements PrefixIndex<T> {
 
-    // TODO: This member should be static and unmodifiable.
-    private final Array<T> emptyList = Collections.createArray();
+
 
     private TrieNode<T> root;
 
@@ -53,9 +54,9 @@ public class AbstractTrie<T> implements PrefixIndex<T> {
     }
 
     @Override
-    public Array<T> search(String prefix) {
+    public List<T> search(String prefix) {
         TrieNode<T> searchRoot = findNode(prefix, root);
-        return (searchRoot == null) ? emptyList : collectSubtree(searchRoot);
+        return (searchRoot == null) ? Collections.<T>emptyList() : collectSubtree(searchRoot);
     }
 
     /**
@@ -66,10 +67,10 @@ public class AbstractTrie<T> implements PrefixIndex<T> {
      *         node to start from
      * @return all leaf nodes in the matching subtree
      */
-    public static <T> Array<T> collectSubtree(TrieNode<T> searchRoot) {
-        Array<TrieNode<T>> leaves = Collections.createArray();
+    public static <T> List<T> collectSubtree(TrieNode<T> searchRoot) {
+        List<TrieNode<T>> leaves = new ArrayList<>();
         getAllLeavesInSubtree(searchRoot, leaves);
-        Array<T> result = Collections.createArray();
+        List<T> result = new ArrayList<>();
         for (int i = 0; i < leaves.size(); i++) {
             result.add(leaves.get(i).getValue());
         }
@@ -85,7 +86,7 @@ public class AbstractTrie<T> implements PrefixIndex<T> {
      * @param leaves
      *         output array
      */
-    private static <T> void getAllLeavesInSubtree(TrieNode<T> root, Array<TrieNode<T>> leaves) {
+    private static <T> void getAllLeavesInSubtree(TrieNode<T> root, List<TrieNode<T>> leaves) {
         if (root.getIsLeaf()) {
             leaves.add(root);
         }
@@ -107,8 +108,8 @@ public class AbstractTrie<T> implements PrefixIndex<T> {
                 return insertIntoTrie(prefix, branch, value);
             } else {
                 // create new trie nodes
-                Array<TrieNode<T>> suffixChain = makeSuffixChain(node, prefix.substring(nodePrefix.length()), value);
-                return suffixChain.peek();
+                List<TrieNode<T>> suffixChain = makeSuffixChain(node, prefix.substring(nodePrefix.length()), value);
+                return suffixChain.get(suffixChain.size()-1);
             }
         }
     }
@@ -124,8 +125,8 @@ public class AbstractTrie<T> implements PrefixIndex<T> {
      *         value of the last node in the chain
      * @return the inserted chain in direct order (from the root to the leaf)
      */
-    Array<TrieNode<T>> makeSuffixChain(TrieNode<T> root, String suffix, T value) {
-        Array<TrieNode<T>> result = Collections.createArray();
+    List<TrieNode<T>> makeSuffixChain(TrieNode<T> root, String suffix, T value) {
+        List<TrieNode<T>> result = new ArrayList<>();
         String rootPrefix = root.getPrefix();
         for (int i = 1, suffixSize = suffix.length(); i <= suffixSize; i++) {
             String newPrefix = rootPrefix + suffix.substring(0, i);

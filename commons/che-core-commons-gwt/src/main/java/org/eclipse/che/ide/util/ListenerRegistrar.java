@@ -17,6 +17,9 @@ package org.eclipse.che.ide.util;
 import org.eclipse.che.ide.collections.Array;
 import org.eclipse.che.ide.collections.Collections;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 /** A manager to register or unregister listeners. */
 public interface ListenerRegistrar<T> {
@@ -32,12 +35,12 @@ public interface ListenerRegistrar<T> {
      * guards against null checks and prevents forgetting to remove listeners.
      */
     public static class RemoverManager implements Remover {
-        private Array<Remover> handlers;
+        private List<Remover> handlers;
 
         /** Tracks a new handler so that it can be removed in bulk. */
         public RemoverManager track(Remover remover) {
             if (handlers == null) {
-                handlers = Collections.createArray();
+                handlers = new ArrayList<>();
             }
 
             handlers.add(remover);

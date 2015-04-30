@@ -40,8 +40,6 @@ import org.eclipse.che.ide.api.project.tree.VirtualFile;
 import org.eclipse.che.ide.api.project.tree.generic.FolderNode;
 import org.eclipse.che.ide.api.project.tree.generic.ItemNode;
 import org.eclipse.che.ide.api.texteditor.HasReadOnlyProperty;
-import org.eclipse.che.ide.collections.Array;
-import org.eclipse.che.ide.collections.Collections;
 import org.eclipse.che.ide.collections.StringMap;
 import org.eclipse.che.ide.util.loging.Log;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -50,6 +48,12 @@ import com.google.inject.Singleton;
 import com.google.web.bindery.event.shared.EventBus;
 
 import javax.annotation.Nonnull;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.eclipse.che.ide.api.event.FileEvent.FileOperation.CLOSE;
 import static org.eclipse.che.ide.api.event.ItemEvent.ItemOperation.DELETED;
@@ -60,7 +64,7 @@ import static org.eclipse.che.ide.api.notification.Notification.Type.INFO;
 @Singleton
 public class EditorAgentImpl implements EditorAgent {
 
-    private final StringMap<EditorPartPresenter> openedEditors;
+    private final Map<String, EditorPartPresenter> openedEditors;
     /** Used to notify {@link EditorAgentImpl} that editor has closed */
     private final EditorPartCloseHandler editorClosed     = new EditorPartCloseHandler() {
         @Override
@@ -78,12 +82,12 @@ public class EditorAgentImpl implements EditorAgent {
             }
         }
     };
-    private final EventBus                   eventBus;
-    private final WorkspaceAgent             workspace;
-    private       Array<EditorPartPresenter> dirtyEditors;
-    private       FileTypeRegistry           fileTypeRegistry;
-    private       EditorRegistry             editorRegistry;
-    private       EditorPartPresenter        activeEditor;
+    private final EventBus                  eventBus;
+    private final WorkspaceAgent            workspace;
+    private       List<EditorPartPresenter> dirtyEditors;
+    private       FileTypeRegistry          fileTypeRegistry;
+    private       EditorRegistry            editorRegistry;
+    private       EditorPartPresenter       activeEditor;
     private final ActivePartChangedHandler activePartChangedHandler = new ActivePartChangedHandler() {
         @Override
         public void onActivePartChanged(ActivePartChangedEvent event) {
@@ -98,14 +102,11 @@ public class EditorAgentImpl implements EditorAgent {
     private final WindowActionHandler windowActionHandler = new WindowActionHandler() {
         @Override
         public void onWindowClosing(final WindowActionEvent event) {
-            openedEditors.iterate(new StringMap.IterationCallback<EditorPartPresenter>() {
-                @Override
-                public void onIteration(String s, EditorPartPresenter editorPartPresenter) {
-                    if (editorPartPresenter.isDirty()) {
-                        event.setMessage(coreLocalizationConstant.changesMayBeLost());
-                    }
+            for (Map.Entry<String, EditorPartPresenter> entry : openedEditors.entrySet()) {
+                if (entry.getValue().isDirty()) {
+                    event.setMessage(coreLocalizationConstant.changesMayBeLost());
                 }
-            });
+            }
         }
 
         @Override
@@ -127,7 +128,7 @@ public class EditorAgentImpl implements EditorAgent {
         this.workspace = workspace;
         this.notificationManager = notificationManager;
         this.coreLocalizationConstant = coreLocalizationConstant;
-        openedEditors = Collections.createStringMap();
+        openedEditors = new HashMap<>();
 
         bind();
     }
@@ -148,7 +149,7 @@ public class EditorAgentImpl implements EditorAgent {
     }
 
     private void closeAllFilesByPath(String path) {
-        for (EditorPartPresenter editor : getOpenedEditors().getValues().asIterable()) {
+        for (EditorPartPresenter editor : getOpenedEditors().values()) {
             if (editor.getEditorInput().getFile().getPath().startsWith(path)) {
                 eventBus.fireEvent(new FileEvent(editor.getEditorInput().getFile(), CLOSE));
             }
@@ -208,9 +209,9 @@ public class EditorAgentImpl implements EditorAgent {
 
     /** {@inheritDoc} */
     @Override
-    public Array<EditorPartPresenter> getDirtyEditors() {
-        Array<EditorPartPresenter> dirtyEditors = Collections.createArray();
-        for (EditorPartPresenter partPresenter : getOpenedEditors().getValues().asIterable()) {
+    public List<EditorPartPresenter> getDirtyEditors() {
+        List<EditorPartPresenter> dirtyEditors = new ArrayList<>();
+        for (EditorPartPresenter partPresenter : getOpenedEditors().values()) {
             if (partPresenter.isDirty()) {
                 dirtyEditors.add(partPresenter);
             }
@@ -238,7 +239,7 @@ public class EditorAgentImpl implements EditorAgent {
 
     /** {@inheritDoc} */
     @Override
-    public StringMap<EditorPartPresenter> getOpenedEditors() {
+    public Map<String, EditorPartPresenter> getOpenedEditors() {
         return openedEditors;
     }
 

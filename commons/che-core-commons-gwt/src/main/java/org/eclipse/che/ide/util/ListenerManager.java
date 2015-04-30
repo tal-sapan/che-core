@@ -17,6 +17,9 @@ package org.eclipse.che.ide.util;
 import org.eclipse.che.ide.collections.Array;
 import org.eclipse.che.ide.collections.Collections;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Lightweight manager for listeners that's designed to reduce boilerplate in
  * classes that have listeners.
@@ -63,20 +66,20 @@ public class ListenerManager<L> implements ListenerRegistrar<L> {
 
     private boolean isDispatching;
 
-    private final Array<L> listeners;
+    private final List<L> listeners;
 
     /** Listeners that were added during a dispatch */
-    private final Array<L> queuedListenerAdditions;
+    private final List<L> queuedListenerAdditions;
 
     /** Listeners that were removed during a dispatch */
-    private final Array<L> queuedListenerRemovals;
+    private final List<L> queuedListenerRemovals;
 
     private final RegistrationListener<L> registrationListener;
 
     private ListenerManager(RegistrationListener<L> registrationListener) {
-        this.listeners = Collections.createArray();
-        this.queuedListenerAdditions = Collections.createArray();
-        this.queuedListenerRemovals = Collections.createArray();
+        this.listeners = new ArrayList<>();
+        this.queuedListenerAdditions = new ArrayList<>();
+        this.queuedListenerRemovals = new ArrayList<>();
         this.registrationListener = registrationListener;
     }
 

@@ -17,19 +17,22 @@ import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.Scheduler;
 import com.google.inject.Inject;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Nikolay Zamosenchuk
  * @author Artem Zatsarynnyy
  */
 public class ComponentRegistry {
-    private Array<Component>             pendingComponents;
+    private List<Component>              pendingComponents;
     private StandardComponentInitializer componentInitializer;
 
     /** Instantiates Component Registry. All components should be listed in this constructor. */
     @Inject
     public ComponentRegistry(ProjectStateHandler projectStateHandler, StandardComponentInitializer componentInitializer) {
         this.componentInitializer = componentInitializer;
-        pendingComponents = Collections.createArray();
+        pendingComponents = new ArrayList<>();
         pendingComponents.add(projectStateHandler);
     }
 
@@ -58,7 +61,7 @@ public class ComponentRegistry {
         };
 
         if (!pendingComponents.isEmpty()) {
-            for (Component component : pendingComponents.asIterable()) {
+            for (Component component : pendingComponents) {
                 component.start(internalCallback);
             }
         } else {

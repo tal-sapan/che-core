@@ -26,6 +26,9 @@ import org.eclipse.che.ide.collections.Array;
 import org.eclipse.che.ide.collections.Collections;
 import com.google.gwt.user.client.Timer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Controller to manage a group of elements that are hovered and unhovered
@@ -125,7 +128,7 @@ public class HoverController {
 
     private Timer unhoverTimer;
 
-    private final Array<PartnerHolder> partners = Collections.createArray();
+    private final List<PartnerHolder> partners = new ArrayList<>();
 
     /**
      * Adds a partner element to this controller. See class javadoc for
