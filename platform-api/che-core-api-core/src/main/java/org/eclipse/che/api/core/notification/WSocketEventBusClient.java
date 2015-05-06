@@ -16,9 +16,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.everrest.websockets.client.BaseClientMessageListener;
 import org.everrest.websockets.client.WSClient;
 import org.everrest.websockets.message.JsonMessageConverter;
-import org.everrest.websockets.message.MessageConversionException;
-import org.everrest.websockets.message.MessageConverter;
-import org.everrest.websockets.message.RESTfulOutputMessage;
+import org.everrest.websockets.message.RestOutputMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +26,7 @@ import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import javax.websocket.DeploymentException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -61,7 +60,7 @@ public final class WSocketEventBusClient {
     private final EventService                         eventService;
     private final Pair<String, String>[]               eventSubscriptions;
     private final ClientEventPropagationPolicy         policy;
-    private final MessageConverter                     messageConverter;
+    private final JsonMessageConverter                 messageConverter;
     private final ConcurrentMap<URI, Future<WSClient>> connections;
     private final AtomicBoolean                        start;
 
@@ -123,7 +122,7 @@ public final class WSocketEventBusClient {
             if (future.isDone()) {
                 try {
                     final WSClient client = future.get();
-                    if (policy.shouldPropagated(client.getUri(), event)) {
+                    if (policy.shouldPropagated(client.getServerUri(), event)) {
                         client.send(messageConverter.toString(Messages.clientMessage(event)));
                     }
                 } catch (Exception e) {
@@ -145,9 +144,9 @@ public final class WSocketEventBusClient {
         if (clientFuture == null) {
             FutureTask<WSClient> newFuture = new FutureTask<>(new Callable<WSClient>() {
                 @Override
-                public WSClient call() throws IOException, MessageConversionException {
+                public WSClient call() throws IOException, DeploymentException {
                     WSClient wsClient = new WSClient(wsUri, new WSocketListener(wsUri, channels));
-                    wsClient.connect(wsConnectionTimeout);
+                    wsClient.connect((int)wsConnectionTimeout);
                     return wsClient;
                 }
             });
@@ -202,7 +201,7 @@ public final class WSocketEventBusClient {
         @Override
         public void onMessage(String data) {
             try {
-                final RESTfulOutputMessage message = messageConverter.fromString(data, RESTfulOutputMessage.class);
+                final RestOutputMessage message = messageConverter.fromString(data, RestOutputMessage.class);
                 if (message != null && message.getHeaders() != null) {
                     for (org.everrest.websockets.message.Pair header : message.getHeaders()) {
                         if ("x-everrest-websocket-channel".equals(header.getName())) {

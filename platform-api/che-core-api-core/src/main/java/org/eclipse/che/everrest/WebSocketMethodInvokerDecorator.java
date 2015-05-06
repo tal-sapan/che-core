@@ -16,6 +16,7 @@ import org.everrest.core.ApplicationContext;
 import org.everrest.core.impl.method.MethodInvokerDecorator;
 import org.everrest.core.method.MethodInvoker;
 import org.everrest.core.resource.GenericMethodResource;
+import org.everrest.websockets.ServerContainerInitializeListener;
 import org.everrest.websockets.WSConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,7 @@ class WebSocketMethodInvokerDecorator extends MethodInvokerDecorator {
 
             try {
                 EnvironmentContext.setCurrent((EnvironmentContext)wsConnection.getAttribute(
-                        CodenvyEverrestWebSocketServlet.ENVIRONMENT_CONTEXT));
+                        "ide.websocket." + EnvironmentContext.class.getName()));
 
                 LOG.debug("Websocket {} in http session {} context of ws {} is temporary {}",
                          wsConnection.getId(),
