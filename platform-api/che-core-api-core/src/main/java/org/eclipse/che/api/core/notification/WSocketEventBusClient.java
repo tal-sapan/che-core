@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class WSocketEventBusClient {
     private static final Logger LOG = LoggerFactory.getLogger(WSocketEventBusClient.class);
 
-    private static final long wsConnectionTimeout = 2000;
+    private static final long wsConnectionTimeout = 2;
 
     private final EventService                         eventService;
     private final Pair<String, String>[]               eventSubscriptions;
