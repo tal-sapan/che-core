@@ -108,10 +108,10 @@ public class BootstrapController {
     private final EventBus                     eventBus;
     private final ActionManager                actionManager;
     private final AppCloseHandler              appCloseHandler;
-    private final AppStateManager appStateManager;
-    private final PresentationFactory presentationFactory;
-    private final AppContext          appContext;
-    private       CurrentUser         currentUser;
+    private final AppStateManager              appStateManager;
+    private final PresentationFactory          presentationFactory;
+    private final AppContext                   appContext;
+    private       CurrentUser                  currentUser;
     private final DocumentTitleDecorator       documentTitleDecorator;
     
     /** Create controller. */
@@ -329,7 +329,8 @@ public class BootstrapController {
                             @Override
                             public void execute() {
                                 displayIDE();
-                                appStateManager.start(Config.getProjectName() == null);
+                                boolean openLastProject = Config.getProjectName() == null && Config.getStartupParam("action") == null;
+                                appStateManager.start(openLastProject);
                             }
                         });
                     }
