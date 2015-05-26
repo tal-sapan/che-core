@@ -11,6 +11,7 @@
 package org.eclipse.che.api.core.notification;
 
 import org.eclipse.che.commons.lang.Pair;
+
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.everrest.websockets.client.BaseClientMessageListener;
@@ -26,6 +27,7 @@ import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import javax.websocket.CloseReason;
 import javax.websocket.DeploymentException;
 import java.io.IOException;
 import java.net.URI;
@@ -55,7 +57,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class WSocketEventBusClient {
     private static final Logger LOG = LoggerFactory.getLogger(WSocketEventBusClient.class);
 
-    private static final long wsConnectionTimeout = 2;
+    private static final long WS_CONNECTION_TIMEOUT = 2;
 
     private final EventService                         eventService;
     private final Pair<String, String>[]               eventSubscriptions;
@@ -146,7 +148,7 @@ public final class WSocketEventBusClient {
                 @Override
                 public WSClient call() throws IOException, DeploymentException {
                     WSClient wsClient = new WSClient(wsUri, new WSocketListener(wsUri, channels));
-                    wsClient.connect((int)wsConnectionTimeout);
+                    wsClient.connect((int)WS_CONNECTION_TIMEOUT);
                     return wsClient;
                 }
             });
@@ -171,6 +173,7 @@ public final class WSocketEventBusClient {
             }
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
+            LOG.info("Interrupt" + e.getLocalizedMessage());
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         } finally {
@@ -192,8 +195,9 @@ public final class WSocketEventBusClient {
         @Override
         public void onClose(int status, String message) {
             connections.remove(wsUri);
-            LOG.debug("Close connection to {}. ", wsUri);
-            if (start.get()) {
+            LOG.debug("Close connection to {} with status {} message {}. ", wsUri, status, message);
+            if (start.get() && status != CloseReason.CloseCodes.GOING_AWAY.getCode()) {
+                LOG.debug("Init connection task {}", wsUri);
                 executor.execute(new ConnectTask(wsUri, channels));
             }
         }
@@ -248,20 +252,23 @@ public final class WSocketEventBusClient {
                 if (Thread.currentThread().isInterrupted()) {
                     return;
                 }
+                LOG.debug("Start connection loop {} channels {} ", wsUri, channels);
                 try {
                     connect(wsUri, channels);
+                    LOG.debug("Connection complete");
                     return;
                 } catch (IOException e) {
-                    LOG.error(String.format("Failed connect to %s", wsUri), e);
+                    LOG.debug(e.getLocalizedMessage(), e);
                     synchronized (this) {
                         try {
-                            wait(wsConnectionTimeout * 2);
+                            wait(WS_CONNECTION_TIMEOUT * 2);
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                             return;
                         }
                     }
                 }
+                LOG.debug("Iteration complete");
             }
         }
     }
