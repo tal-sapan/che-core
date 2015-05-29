@@ -195,11 +195,9 @@ public final class WSocketEventBusClient {
         @Override
         public void onClose(int status, String message) {
             connections.remove(wsUri);
-            LOG.debug("Close connection to {} with status {} message {}. ", wsUri, status, message);
-            if (start.get() && status != CloseReason.CloseCodes.GOING_AWAY.getCode()) {
-                LOG.debug("Init connection task {}", wsUri);
-                executor.execute(new ConnectTask(wsUri, channels));
-            }
+            LOG.info("Close connection to {} with status {} message {}. ", wsUri, status, message);
+            LOG.info("Init connection task {}", wsUri);
+            executor.execute(new ConnectTask(wsUri, channels));
         }
 
         @Override
@@ -226,7 +224,7 @@ public final class WSocketEventBusClient {
 
         @Override
         public void onOpen(WSClient client) {
-            LOG.debug("Open connection to {}. ", wsUri);
+            LOG.info("Open connection to {}. ", wsUri);
             for (String channel : channels) {
                 try {
                     client.send(messageConverter.toString(Messages.subscribeChannelMessage(channel)));
@@ -249,16 +247,17 @@ public final class WSocketEventBusClient {
         @Override
         public void run() {
             for (; ; ) {
+
                 if (Thread.currentThread().isInterrupted()) {
                     return;
                 }
-                LOG.debug("Start connection loop {} channels {} ", wsUri, channels);
+                LOG.info("Start connection loop {} channels {} ", wsUri, channels);
                 try {
                     connect(wsUri, channels);
-                    LOG.debug("Connection complete");
+                    LOG.info("Connection complete");
                     return;
                 } catch (IOException e) {
-                    LOG.debug(e.getLocalizedMessage(), e);
+                    LOG.info(e.getLocalizedMessage(), e);
                     synchronized (this) {
                         try {
                             wait(WS_CONNECTION_TIMEOUT * 2);
@@ -267,8 +266,15 @@ public final class WSocketEventBusClient {
                             return;
                         }
                     }
+                } catch (Exception e) {
+                    LOG.error("Unexpected here");
+                    LOG.error(e.getLocalizedMessage(), e);
+                }catch (Throwable e){
+                    LOG.error("Unexpected here");
+                    LOG.error(e.getLocalizedMessage(), e);
+
                 }
-                LOG.debug("Iteration complete");
+                LOG.info("Iteration complete");
             }
         }
     }
