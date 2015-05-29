@@ -11,6 +11,8 @@
 
 package org.eclipse.che.everrest;
 
+import org.eclipse.che.commons.env.EnvironmentContext;
+import org.eclipse.che.commons.user.User;
 import org.everrest.core.impl.EverrestConfiguration;
 import org.everrest.core.impl.EverrestProcessor;
 import org.everrest.core.impl.provider.json.JsonException;
@@ -39,6 +41,7 @@ import javax.websocket.server.ServerContainer;
 import javax.websocket.server.ServerEndpointConfig;
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,6 +58,7 @@ import static javax.websocket.server.ServerEndpointConfig.Configurator;
  * @author andrew00x
  */
 public class ServerContainerInitializeListener implements ServletContextListener {
+    static final        String ENVIRONMENT_CONTEXT          = "ide.websocket." + EnvironmentContext.class.getName();
     public static final String EVERREST_PROCESSOR_ATTRIBUTE = EverrestProcessor.class.getName();
     public static final String HTTP_SESSION_ATTRIBUTE       = HttpSession.class.getName();
     public static final String EVERREST_CONFIG_ATTRIBUTE    = EverrestConfiguration.class.getName();
@@ -90,13 +94,13 @@ public class ServerContainerInitializeListener implements ServletContextListener
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         if (wsServerEndpointConfig != null) {
-            ExecutorService executor = (ExecutorService) wsServerEndpointConfig.getUserProperties().get(EXECUTOR_ATTRIBUTE);
+            ExecutorService executor = (ExecutorService)wsServerEndpointConfig.getUserProperties().get(EXECUTOR_ATTRIBUTE);
             if (executor != null) {
                 executor.shutdownNow();
             }
         }
         if (eventbusServerEndpointConfig != null) {
-            ExecutorService executor = (ExecutorService) eventbusServerEndpointConfig.getUserProperties().get(EXECUTOR_ATTRIBUTE);
+            ExecutorService executor = (ExecutorService)eventbusServerEndpointConfig.getUserProperties().get(EXECUTOR_ATTRIBUTE);
             if (executor != null) {
                 executor.shutdownNow();
             }
@@ -139,8 +143,8 @@ public class ServerContainerInitializeListener implements ServletContextListener
                 if (httpSession != null) {
                     sec.getUserProperties().put(HTTP_SESSION_ATTRIBUTE, httpSession);
                 }
-                final SecurityContext securityContext = createSecurityContext(request);
-                sec.getUserProperties().put(SECURITY_CONTEXT, securityContext);
+                sec.getUserProperties().put(SECURITY_CONTEXT, createSecurityContext(request));
+                sec.getUserProperties().put(ENVIRONMENT_CONTEXT, EnvironmentContext.getCurrent());
             }
         };
     }
@@ -158,28 +162,48 @@ public class ServerContainerInitializeListener implements ServletContextListener
         return Executors.newFixedThreadPool(everrestConfiguration.getAsynchronousPoolSize(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
-                final Thread t = new Thread(r, "everrest.WSConnection."+servletContext.getServletContextName() + sequence.getAndIncrement());
+                final Thread t =
+                        new Thread(r, "everrest.WSConnection." + servletContext.getServletContextName() + sequence.getAndIncrement());
                 t.setDaemon(true);
                 return t;
             }
         });
     }
 
-    protected SecurityContext createSecurityContext(HandshakeRequest req) {
+    protected SecurityContext createSecurityContext(final HandshakeRequest req) {
         final boolean isSecure = false; //todo: get somehow from request
-        final Principal principal = req.getUserPrincipal();
-        if (principal == null) {
+        final String authType = "BASIC";
+        final User user = EnvironmentContext.getCurrent().getUser();
+
+        if (user == null) {
             return new SimpleSecurityContext(isSecure);
         }
-        final String authenticationScheme = "BASIC"; //todo: get somehow from request
-        final Set<String> userRoles = new LinkedHashSet<>();
-        for (String declaredRole : webApplicationDeclaredRoles.getDeclaredRoles()) {
-            if (req.isUserInRole(declaredRole)) {
-                userRoles.add(declaredRole);
+
+        final Principal principal = new SimplePrincipal(user.getName());
+        return new SecurityContext() {
+
+            @Override
+            public Principal getUserPrincipal() {
+                return principal;
             }
-        }
-        return new SimpleSecurityContext(new SimplePrincipal(principal.getName()), userRoles, authenticationScheme, isSecure);
+
+            @Override
+            public boolean isUserInRole(String role) {
+                return user.isMemberOf(role);
+            }
+
+            @Override
+            public boolean isSecure() {
+                return isSecure;
+            }
+
+            @Override
+            public String getAuthenticationScheme() {
+                return authType;
+            }
+        };
     }
+
 
     public static class InputMessageDecoder extends BaseTextDecoder<RestInputMessage> {
         private final JsonMessageConverter jsonMessageConverter = new JsonMessageConverter();
