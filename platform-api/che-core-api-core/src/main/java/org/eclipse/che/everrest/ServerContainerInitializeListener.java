@@ -13,8 +13,12 @@ package org.eclipse.che.everrest;
 
 import org.eclipse.che.commons.env.EnvironmentContext;
 import org.eclipse.che.commons.user.User;
+import org.everrest.core.DependencySupplier;
+import org.everrest.core.ResourceBinder;
+import org.everrest.core.impl.ApplicationProviderBinder;
 import org.everrest.core.impl.EverrestConfiguration;
 import org.everrest.core.impl.EverrestProcessor;
+import org.everrest.core.impl.ProviderBinder;
 import org.everrest.core.impl.provider.json.JsonException;
 import org.everrest.core.tools.SimplePrincipal;
 import org.everrest.core.tools.SimpleSecurityContext;
@@ -58,7 +62,7 @@ import static javax.websocket.server.ServerEndpointConfig.Configurator;
  * @author andrew00x
  */
 public class ServerContainerInitializeListener implements ServletContextListener {
-    static final        String ENVIRONMENT_CONTEXT          = "ide.websocket." + EnvironmentContext.class.getName();
+    public static final String ENVIRONMENT_CONTEXT          = "ide.websocket." + EnvironmentContext.class.getName();
     public static final String EVERREST_PROCESSOR_ATTRIBUTE = EverrestProcessor.class.getName();
     public static final String HTTP_SESSION_ATTRIBUTE       = HttpSession.class.getName();
     public static final String EVERREST_CONFIG_ATTRIBUTE    = EverrestConfiguration.class.getName();
@@ -112,7 +116,7 @@ public class ServerContainerInitializeListener implements ServletContextListener
         final List<Class<? extends Decoder>> decoders = new LinkedList<>();
         encoders.add(OutputMessageEncoder.class);
         decoders.add(InputMessageDecoder.class);
-        final ServerEndpointConfig endpointConfig = create(WSConnectionImpl.class, "/ws/{ws-id}")
+        final ServerEndpointConfig endpointConfig = create(CheWSConnection.class, "/ws/{ws-id}")
                 .configurator(createConfigurator()).encoders(encoders).decoders(decoders).build();
         endpointConfig.getUserProperties().put(EVERREST_PROCESSOR_ATTRIBUTE, getEverrestProcessor(servletContext));
         endpointConfig.getUserProperties().put(EVERREST_CONFIG_ATTRIBUTE, getEverrestConfiguration(servletContext));
@@ -125,7 +129,7 @@ public class ServerContainerInitializeListener implements ServletContextListener
         final List<Class<? extends Decoder>> decoders = new LinkedList<>();
         encoders.add(OutputMessageEncoder.class);
         decoders.add(InputMessageDecoder.class);
-        final ServerEndpointConfig endpointConfig = create(WSConnectionImpl.class, "/eventbus/")
+        final ServerEndpointConfig endpointConfig = create(CheWSConnection.class, "/eventbus/")
                 .configurator(createConfigurator()).encoders(encoders).decoders(decoders).build();
         endpointConfig.getUserProperties().put(EVERREST_PROCESSOR_ATTRIBUTE, getEverrestProcessor(servletContext));
         endpointConfig.getUserProperties().put(EVERREST_CONFIG_ATTRIBUTE, getEverrestConfiguration(servletContext));
@@ -150,7 +154,13 @@ public class ServerContainerInitializeListener implements ServletContextListener
     }
 
     protected EverrestProcessor getEverrestProcessor(ServletContext servletContext) {
-        return (EverrestProcessor)servletContext.getAttribute(EVERREST_PROCESSOR_ATTRIBUTE);
+
+        final DependencySupplier dependencies = (DependencySupplier)servletContext.getAttribute(DependencySupplier.class.getName());
+        final ResourceBinder resources = (ResourceBinder)servletContext.getAttribute(ResourceBinder.class.getName());
+        final ProviderBinder providers = (ProviderBinder)servletContext.getAttribute(ApplicationProviderBinder.class.getName());
+        final EverrestConfiguration copy = getEverrestConfiguration(servletContext);
+        copy.setProperty(EverrestConfiguration.METHOD_INVOKER_DECORATOR_FACTORY, WebSocketMethodInvokerDecoratorFactory.class.getName());
+        return new EverrestProcessor(resources, providers, dependencies, copy, null);
     }
 
     protected EverrestConfiguration getEverrestConfiguration(ServletContext servletContext) {
