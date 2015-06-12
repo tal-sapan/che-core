@@ -100,7 +100,7 @@ public class EventService {
             if (eventSubscribers != null && !eventSubscribers.isEmpty()) {
                 for (EventSubscriber eventSubscriber : eventSubscribers) {
                     try {
-                        LOG.info("Publish event {} for {}", event, eventSubscriber);
+                        LOG.debug("Publish event {} for {}", event, eventSubscriber);
                         eventSubscriber.onEvent(event);
                     } catch (RuntimeException e) {
                         LOG.error(e.getMessage(), e);

@@ -173,7 +173,7 @@ public final class WSocketEventBusClient {
             }
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
-            LOG.info("Interrupt" + e.getLocalizedMessage());
+            LOG.info("Client interrupted " + e.getLocalizedMessage());
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         } finally {
@@ -197,7 +197,9 @@ public final class WSocketEventBusClient {
             connections.remove(wsUri);
             LOG.info("Close connection to {} with status {} message {}. ", wsUri, status, message);
             LOG.info("Init connection task {}", wsUri);
-            executor.execute(new ConnectTask(wsUri, channels));
+            if (start.get()) {
+                executor.execute(new ConnectTask(wsUri, channels));
+            }
         }
 
         @Override
@@ -251,13 +253,14 @@ public final class WSocketEventBusClient {
                 if (Thread.currentThread().isInterrupted()) {
                     return;
                 }
-                LOG.info("Start connection loop {} channels {} ", wsUri, channels);
+                LOG.debug("Start connection loop {} channels {} ", wsUri, channels);
                 try {
                     connect(wsUri, channels);
-                    LOG.info("Connection complete");
+                    LOG.debug("Connection complete");
                     return;
                 } catch (IOException e) {
-                    LOG.info(e.getLocalizedMessage(), e);
+                    LOG.warn("Not able to connect to {} because {}. Retrying ", wsUri, e.getLocalizedMessage());
+                    LOG.debug(e.getLocalizedMessage(), e);
                     synchronized (this) {
                         try {
                             wait(WS_CONNECTION_TIMEOUT * 2);
@@ -269,12 +272,12 @@ public final class WSocketEventBusClient {
                 } catch (Exception e) {
                     LOG.error("Unexpected here");
                     LOG.error(e.getLocalizedMessage(), e);
-                }catch (Throwable e){
+                } catch (Throwable e) {
                     LOG.error("Unexpected here");
                     LOG.error(e.getLocalizedMessage(), e);
 
                 }
-                LOG.info("Iteration complete");
+                LOG.debug("Iteration complete");
             }
         }
     }

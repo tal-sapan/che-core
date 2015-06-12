@@ -46,7 +46,7 @@ class WebSocketMethodInvokerDecorator extends MethodInvokerDecorator {
 
                     EnvironmentContext.setCurrent(environmentContext);
 
-                    LOG.warn("Websocket {} in http session {} context of ws {} is temporary {}",
+                    LOG.debug("Websocket {} in http session {} context of ws {} is temporary {}",
                              wsConnection.getId(),
                              wsConnection.getHttpSession(),
                              EnvironmentContext.getCurrent().getWorkspaceName(),
