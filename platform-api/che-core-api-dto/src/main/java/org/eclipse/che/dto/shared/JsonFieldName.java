@@ -8,13 +8,23 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.api.account.shared.dto;
+package org.eclipse.che.dto.shared;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import com.google.common.annotations.Beta;
 
 /**
- * Types of dilling cycles
- *
- * @author Alexander Garagatyi
+ * Use a custom name for the JSON element that corresponds to a class field
+ * 
+ * @author Tareq Sharafy (tareq.sharafy@sap.com)
  */
-public enum BillingCycleType {
-    AutoRenew, OneTime, NoRenewal
+@Beta
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface JsonFieldName {
+    String value();
 }
