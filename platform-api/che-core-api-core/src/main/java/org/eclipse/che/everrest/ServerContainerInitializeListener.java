@@ -58,6 +58,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import static javax.websocket.server.ServerEndpointConfig.Builder.create;
 import static javax.websocket.server.ServerEndpointConfig.Configurator;
 
+import com.google.common.base.MoreObjects;
+
 /**
  * @author andrew00x
  */
@@ -75,10 +77,12 @@ public class ServerContainerInitializeListener implements ServletContextListener
     private EverrestConfiguration       everrestConfiguration;
     private ServerEndpointConfig        wsServerEndpointConfig;
     private ServerEndpointConfig        eventbusServerEndpointConfig;
+    private String                      websocketContext;
 
     @Override
     public final void contextInitialized(ServletContextEvent sce) {
         final ServletContext servletContext = sce.getServletContext();
+        websocketContext = MoreObjects.firstNonNull(servletContext.getInitParameter("org.everrest.websocket.context"), "");
         webApplicationDeclaredRoles = new WebApplicationDeclaredRoles(servletContext);
         everrestConfiguration = (EverrestConfiguration)servletContext.getAttribute(EVERREST_CONFIG_ATTRIBUTE);
         if (everrestConfiguration == null) {
@@ -116,7 +120,7 @@ public class ServerContainerInitializeListener implements ServletContextListener
         final List<Class<? extends Decoder>> decoders = new LinkedList<>();
         encoders.add(OutputMessageEncoder.class);
         decoders.add(InputMessageDecoder.class);
-        final ServerEndpointConfig endpointConfig = create(CheWSConnection.class, "/ws/{ws-id}")
+        final ServerEndpointConfig endpointConfig = create(CheWSConnection.class, websocketContext+"/ws/{ws-id}")
                 .configurator(createConfigurator()).encoders(encoders).decoders(decoders).build();
         endpointConfig.getUserProperties().put(EVERREST_PROCESSOR_ATTRIBUTE, getEverrestProcessor(servletContext));
         endpointConfig.getUserProperties().put(EVERREST_CONFIG_ATTRIBUTE, getEverrestConfiguration(servletContext));
@@ -129,7 +133,7 @@ public class ServerContainerInitializeListener implements ServletContextListener
         final List<Class<? extends Decoder>> decoders = new LinkedList<>();
         encoders.add(OutputMessageEncoder.class);
         decoders.add(InputMessageDecoder.class);
-        final ServerEndpointConfig endpointConfig = create(CheWSConnection.class, "/eventbus/")
+        final ServerEndpointConfig endpointConfig = create(CheWSConnection.class, websocketContext+"/eventbus/")
                 .configurator(createConfigurator()).encoders(encoders).decoders(decoders).build();
         endpointConfig.getUserProperties().put(EVERREST_PROCESSOR_ATTRIBUTE, getEverrestProcessor(servletContext));
         endpointConfig.getUserProperties().put(EVERREST_CONFIG_ATTRIBUTE, getEverrestConfiguration(servletContext));
