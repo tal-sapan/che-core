@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.eclipse.che.api.machine.server;
 
+import com.google.common.collect.Maps;
 import com.google.common.io.CharStreams;
 
 import org.eclipse.che.api.core.ForbiddenException;
@@ -54,7 +55,6 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -422,7 +422,7 @@ public class MachineService {
                                                               .withDisplayName(machine.getDisplayName());
 
         Map<String, Server> servers = machine.getServers();
-        final Map<String, ServerDescriptor> serverDescriptors = new HashMap<>(servers.size());
+        final Map<String, ServerDescriptor> serverDescriptors = Maps.newHashMapWithExpectedSize(servers.size());
         for (Map.Entry<String, Server> serverEntry : servers.entrySet()) {
             serverDescriptors.put(serverEntry.getKey(),
                                   dtoFactory.createDto(ServerDescriptor.class)

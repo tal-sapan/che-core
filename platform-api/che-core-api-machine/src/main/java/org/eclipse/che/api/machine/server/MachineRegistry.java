@@ -18,8 +18,6 @@ import org.eclipse.che.api.machine.server.spi.Instance;
 
 import javax.inject.Singleton;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -87,17 +85,17 @@ public class MachineRegistry {
     }
 
     public synchronized void add(Instance instance) throws MachineException, ConflictException {
-        final Instance nullOrArgument = instances.putIfAbsent(instance.getId(), instance);
+        final Instance nullOrArgument = instances.put(instance.getId(), instance);
         if (nullOrArgument != null) {
             throw new ConflictException("Machine with id " + instance.getId() + " is already exist");
         }
     }
 
-    public void add(MachineState machineState) throws MachineException, ConflictException {
-        final MachineState nullOrArgument = states.putIfAbsent(machineState.getId(), machineState);
-        if (nullOrArgument != null) {
+    public synchronized void add(MachineState machineState) throws MachineException, ConflictException {
+        if (states.containsKey(machineState.getId())) {
             throw new ConflictException("Machine with id " + machineState.getId() + " is already exist");
         }
+        states.put(machineState.getId(), machineState);
     }
 
     public synchronized void update(MachineState state) throws ConflictException, MachineException {
