@@ -431,6 +431,12 @@ public interface CoreLocalizationConstant extends Messages {
     String invalidName();
 
     /* Messages */
+    @Key("messages.serverFailure")
+    String messagesServerFailure();
+
+    @Key("messages.serverStopping")
+    String messagesServerStopping();
+
     @Key("messages.changesMayBeLost")
     String changesMayBeLost();
 
@@ -522,6 +528,9 @@ public interface CoreLocalizationConstant extends Messages {
     @Key("delete")
     @DefaultMessage("Delete")
     String delete();
+
+    @Key("serverFailure.title")
+    String serverFailureTitle();
 
     @Key("projectProblem.title")
     String projectProblemTitle();
